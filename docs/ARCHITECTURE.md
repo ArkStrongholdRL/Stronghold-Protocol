@@ -47,6 +47,12 @@ making one, in Chinese). How to set up, test and send a change: [CONTRIBUTING.md
   + − × ÷ and `Math.sqrt`; ESLint and `test/sim/detmath.test.js` refuse the Math ones in `server/sim/`. The golden
   results (§5) rely on it.
 
+Optional server-side trajectory capture (`server/match/trajectory.js`, installed
+at the end of Match construction) observes human-seat intents and public/own
+views. It writes bounded local JSONL outside the sim; `tools/trajectory.mjs`
+verifies files. See [TRAJECTORIES.md](TRAJECTORIES.md). Default off; test rooms
+are excluded.
+
 ## 2. The WebSocket protocol
 
 `shared/protocol.js` is normative: `C2S` holds one validator per client message and `S2C` lists the server messages.

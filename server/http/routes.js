@@ -94,6 +94,10 @@ export function createRequestHandler({ serveStatic, health, log, trustProxy = 'a
       sendError(req, res, 405, '不支持的请求方法 · Method not allowed');
       return;
     }
+    if (parts.rawPath === '/trajectory-policy') {
+      sendJson(req, res, 200, { enabled: !!process.env.SP_TRAJECTORY_DIR, noticeVersion: '2026-10-20-v1' });
+      return;
+    }
     if (parts.rawPath === '/healthz') {
       const withTraffic = wantsTraffic(parts.query) && isLocalIp(clientAddress(req, trustProxy).ip);
       sendJson(req, res, 200, healthReport(health, withTraffic));

@@ -113,6 +113,8 @@ export function buildResult(m, outcome) {
       seat: ps.seat,
       name: ps.name,
       isBot: ps.isBot,
+      controller: { ...ps.controller },
+      llmUsed: ps.llmUsed,
       left: ps.left,
       alive: ps.alive,
       victory: cleared,

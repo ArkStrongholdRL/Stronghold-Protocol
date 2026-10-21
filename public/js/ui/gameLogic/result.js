@@ -1,5 +1,6 @@
 // ui/gameLogic/result.js — end-of-match result normalisation. Re-exported from ../gameLogic.js.
 
+import { normalizeController } from '../../../../shared/playerController.js';
 import { int, isObj, sortedPlayers } from './shared.js';
 import { t } from '../../../../shared/i18n.js';
 
@@ -27,6 +28,8 @@ export function normalizeResult(res, pub) {
       seat: int(p.seat, int(pp.seat, 0)),
       name: p.name || pp.name || t('博士'),
       isBot: !!(p.isBot ?? pp.isBot),
+      controller: normalizeController(p.controller ?? pp.controller, !!(p.isBot ?? pp.isBot)),
+      llmUsed: p.llmUsed === true || pp.llmUsed === true || (p.controller ?? pp.controller)?.kind === 'llm',
       alive,
       lp: teamLp != null ? (alive === false ? 0 : Math.max(0, teamLp)) : ownLp,
       lpShared: teamLp != null,

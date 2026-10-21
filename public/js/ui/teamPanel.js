@@ -18,6 +18,7 @@
 // the player watches, so the number moves with the kills on screen), else m.public players[].uniteLeft (the authority's
 // report, ~1 Hz).
 
+import { PlayerControllerMark } from './playerController.js';
 import { useEffect, useRef, useState } from '../../vendor/hooks.module.js';
 import { PHASE } from '../../../shared/constants.js';
 import { html, Icon, Tooltip } from './components.js';
@@ -179,7 +180,7 @@ export function TeamPanel({ pub, myId, watching, bubbles, onWatch, compact = fal
             : spMarks?.get(p.playerId) === 'turn' ? html`<span class="team__spmark is-turn" title=${t('正在决策…')}><i></i><i></i><i></i></span>` : null}
         </button>
         <div class="team__info">
-          <span class="team__name">${p.name || t('博士')}</span>
+          <span class="team__name">${p.name || t('博士')}</span><${PlayerControllerMark} player=${p} />
           <div class="team__line">
             <${LpTower} value=${lp.lp} size="sm" tone=${Number.isFinite(lp.lp) && lp.lp - lp.pending <= 5 ? 'danger' : null} pending=${lp.pending}
               tip=${rowLpTip(lp, cap)} />

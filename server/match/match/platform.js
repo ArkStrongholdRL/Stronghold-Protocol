@@ -4,6 +4,7 @@
 // = elimination (_quit), dispose.
 // Installed on Match.prototype by server/match/Match.js (a method container: never instantiated; `this` is the match).
 
+import { normalizeController, sameController } from '../../../shared/playerController.js';
 import { C2S } from '../../../shared/protocol.js';
 import { PHASE, ERR } from '../../../shared/constants.js';
 import { syntheticResult } from '../fields.js';
@@ -136,6 +137,19 @@ export class MatchPlatform {
       if (this.clientCombat) this._authorityLost(ps, 'disconnect');
       // a rehearsal this host was running falls back to the server (DESIGN §14; a no-op without tasks)
       this._rehearsalHostChanged();
+      this.markPublic();
+    });
+  }
+
+  // Platform metadata: source changes do not change gameplay or enable engine autoplay.
+  setController(playerId, declaration) {
+    const ps = this.players.get(playerId);
+    if (!ps || ps.isBot || ps.left || this.disposed || this.ended) return;
+    const controller = normalizeController(declaration);
+    if (sameController(ps.controller, controller)) return;
+    this.guard(() => {
+      ps.controller = controller;
+      ps.llmUsed ||= controller.kind === 'llm';
       this.markPublic();
     });
   }

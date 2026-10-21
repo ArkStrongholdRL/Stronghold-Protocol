@@ -60,12 +60,12 @@ export function makeLookups(ready = true) {
 
 /**
  * <img> that swaps to a fallback node when the URL is missing or fails.
- * @param {{ src?: string|null, class?: string, alt?: string, fallback?: any, style?: string }} props
+ * @param {{ src?: string|null, class?: string, alt?: string, fallback?: any, style?: string, priority?: boolean }} props
  */
-export function Img({ src, class: cls, alt = '', fallback = null, style }) {
+export function Img({ src, class: cls, alt = '', fallback = null, style, priority = false }) {
   const [bad, setBad] = useState(null);
   if (!src || bad === src) return fallback;
-  return html`<img class=${cls} src=${src} alt=${alt} draggable=${false} loading="lazy" style=${style} onError=${() => setBad(src)} />`;
+  return html`<img class=${cls} src=${src} alt=${alt} draggable=${false} loading=${priority ? 'eager' : 'lazy'} fetchpriority=${priority ? 'high' : 'auto'} decoding="async" style=${style} onError=${() => setBad(src)} />`;
 }
 
 /** Official UI sprite by 'group/key' with a fallback. */
@@ -265,7 +265,7 @@ export function PlayerAvatar({ player, size = 'md', self = false, class: cls }) 
   return html`<span class=${cx('pavatar', `pavatar--${size}`, self && 'is-self', dead && 'is-dead', left && 'is-left', player?.isBot && 'is-bot',
       player?.connected === false && !player?.isBot && 'is-offline', cls)} style=${`--seat-hue:${hue}`}>
     <span class="pavatar__img">
-      <${Img} src=${src} fallback=${player?.isBot ? html`<${Icon} name="robot" class="pavatar__bot" />` : html`<span class="pavatar__glyph">${glyph}</span>`} />
+      <${Img} src=${src} priority=${true} fallback=${player?.isBot ? html`<${Icon} name="robot" class="pavatar__bot" />` : html`<span class="pavatar__glyph">${glyph}</span>`} />
     </span>
     ${dead ? html`<span class="pavatar__x" aria-label=${tr('已淘汰')}><${Icon} name="close" /></span>` : null}
     ${left ? html`<span class="pavatar__door" aria-label=${tr('已离开')}><${Icon} name="exit" /></span>` : null}

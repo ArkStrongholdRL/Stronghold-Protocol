@@ -366,7 +366,7 @@ export class Net {
   _sendHello() {
     if (!this.name) return;
     const rid = this._nextRid();
-    const msg = { t: 'hello', rid, name: this.name, version: PROTOCOL_VERSION };
+    const msg = { t: 'hello', rid, name: this.name, version: PROTOCOL_VERSION, controller: { kind: 'human', client: 'web' } };
     let token = null;
     try { token = this.getToken(); } catch { token = null; }
     if (typeof token === 'string' && token.length > 0 && token.length <= 64) {

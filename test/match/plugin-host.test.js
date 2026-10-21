@@ -367,3 +367,38 @@ async function prep(c, priv) {
   }
   await c.request({ t: 'g.ready', ready: true });
 }
+
+for (const transport of ['process', 'worker']) {
+  test(`declared controller metadata reaches a ${transport} match and survives handoff`, { timeout: 30000 }, async () => {
+    const contents = setsOf(pluginsDir({ roles: [{ data: ['patch.json'] }, { 'patch.json': bondPatch(0.35) }] }));
+    const resolved = contents.resolve(['roles']);
+    assert.ok(resolved.ok, JSON.stringify(resolved));
+    contents.hold(resolved.set.cs);
+    const hosts = createMatchHosts({ contents, transport, log: quiet, options: { matchOptions: { botRehearsal: 0 } } });
+    let listener = null;
+    const out = frames();
+    function waitRole(kind) {
+      return new Promise((resolve, reject) => {
+        const timer = setTimeout(() => { listener = null; reject(new Error(`missing ${kind} controller`)); }, 10000);
+        listener = msg => {
+          if (msg.t === 'm.public' && msg.players[0].controller?.kind === kind) {
+            clearTimeout(timer); listener = null; resolve(msg.players[0]);
+          }
+        };
+      });
+    }
+    try {
+      const opts = matchOpts(resolved.set.cs, [{ seat: 0, playerId: 'p_roles', name: 'Agent', isBot: false, connected: true,
+        controller: { kind: 'llm', client: 'codex-mcp' } }], out, { broadcast: msg => listener?.(msg) });
+      const m = hosts.create(resolved.set.cs, opts);
+      const initial = waitRole('llm'); m.start();
+      assert.equal((await initial).llmUsed, true);
+      const changed = waitRole('human');
+      m.setController('p_roles', { kind: 'human', client: 'web' });
+      const row = await changed;
+      assert.equal(row.llmUsed, true);
+      assert.equal(row.isBot, false);
+      m.dispose();
+    } finally { hosts.close(); }
+  });
+}

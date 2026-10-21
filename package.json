@@ -40,23 +40,25 @@
     "check:imports": "node tools/check-imports.mjs",
     "ci": "node tools/ci.mjs",
     "package": "node tools/package.mjs",
-    "package:lite": "node tools/package.mjs --lite"
+    "package:lite": "node tools/package.mjs --lite",
+    "build:client": "node tools/build-client.mjs"
   },
   "engines": {
     "node": ">=22"
   },
   "dependencies": {
+    "acorn": "8.18.0",
     "htm": "^3.1.1",
     "pixi-spine": "^4.0.6",
     "pixi.js": "^7.4.2",
     "preact": "^10.29.8",
     "ses": "2.3.0",
     "three": "^0.186.1",
-    "ws": "^8.22.0",
-    "acorn": "8.18.0"
+    "ws": "^8.22.0"
   },
   "devDependencies": {
     "@eslint/js": "^10.0.1",
+    "esbuild": "0.25.12",
     "eslint": "^10.12.0",
     "globals": "^17.13.0",
     "puppeteer-core": "^25.12.0",

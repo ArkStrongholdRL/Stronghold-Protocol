@@ -8,7 +8,7 @@
 import { guardTestMessage } from '../../shared/testMode.js';
 
 export const TEST_INPUT_METHODS = Object.freeze([
-  'start', 'handle', 'setLoadout', 'onDisconnect', 'onReconnect', 'onLeave', 'setHost',
+  'start', 'handle', 'setController', 'setLoadout', 'onDisconnect', 'onReconnect', 'onLeave', 'setHost',
   'addSpectator', 'removeSpectator', 'requestSetupReroll', 'cancelSetupReroll', 'dispose',
 ]);
 /** Lines of one match's [test-input] journal, including chunks and the capped marker. */

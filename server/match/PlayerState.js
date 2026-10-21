@@ -121,6 +121,7 @@
 //                 DIY draws (diyRollEntries) and the reward / grant draws (diyStockEntries), the pick of a piece (diyPickOf)
 //   common.js     HAND_SIZE, TEMP_SIZE, MAX_OFFER_SLOTS, OK, fail
 
+import { normalizeController } from '../../shared/playerController.js';
 import { FIELD } from './board.js';
 import { computeBonds } from './bondsMeta.js';
 import { HAND_SIZE, TEMP_SIZE } from './player/common.js';
@@ -138,7 +139,7 @@ import { PlayerDiy, DiyStock } from './player/diy.js';
 export class PlayerState {
   /**
    * @param {import('./Match.js').Match} m owning match
-   * @param {{ seat: number, playerId: string, name: string, isBot: boolean, connected: boolean, loadout?: any, notOwned?: any, diy?: any, skins?: any }} seat
+   * @param {{ seat: number, playerId: string, name: string, isBot: boolean, connected: boolean, controller?: any, loadout?: any, notOwned?: any, diy?: any, skins?: any }} seat
    */
   constructor(m, seat) {
     this.m = m;
@@ -147,6 +148,8 @@ export class PlayerState {
     this.seat = seat.seat;
     this.name = seat.name;
     this.isBot = !!seat.isBot;
+    this.controller = normalizeController(seat.controller, this.isBot);
+    this.llmUsed = this.controller.kind === 'llm';
     this.connected = this.isBot ? true : !!seat.connected;
     this.left = false;
     this.autoplay = false;

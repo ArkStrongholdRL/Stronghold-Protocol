@@ -161,6 +161,7 @@
 //     code; a player never switches to spectating in place (ALREADY). Disconnect / grace / reconnect / expiry work as for
 //     a player seat (the seat is kept and given back on resume).
 
+import { normalizeController, sameController } from '../shared/playerController.js';
 import { randomBytes, randomInt } from 'node:crypto';
 import { DIFFICULTIES, ERR, MAX_SEATS, MAX_SPECTATORS, ROOM_CODE_LEN, modeIdFor } from '../shared/constants.js';
 import { checkLoadout, checkLoadoutOps, cultivationCharIds, checkNotOwned, checkDiyPicks, charPotentialChanges, checkSkinSelection, operatorCharIds } from '../shared/protocol.js';
@@ -203,7 +204,7 @@ const matchAnswer = (res) => (res && typeof res === 'object' && res.error
 const noopLog = { info() {}, warn() {}, error() {}, debug() {} };
 
 /**
- * @typedef {{ seat: number, playerId: string, name: string, isBot: boolean, ready: boolean,
+ * @typedef {{ seat: number, playerId: string, name: string, isBot: boolean, controller?: any, ready: boolean,
  *             connected: boolean, left: boolean, loadout?: Record<string, { skill: number, module: string|null }> | null,
  *             ops?: Readonly<Record<string, { potential: number, cultivate: number }>> | null,
  *             notOwned?: readonly string[] | null, diy?: Readonly<Record<string, DiyLoadout>> | null,
@@ -345,7 +346,7 @@ export class Room {
       aiPicksLast: this.aiPicksLast,
       inMatch: !!this.match,
       seats: this.seats.map((s) => (s
-        ? { seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, ready: s.ready, connected: s.connected && !s.left,
+        ? { seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, controller: normalizeController(s.controller, s.isBot), ready: s.ready, connected: s.connected && !s.left,
           // a room with gameplay plugins (header "Gameplay plugins"): has this player's page loaded and checked its content?
           ...(this.modded && !s.isBot ? { content: s.content || 'loading' } : {}) }
         : null)),
@@ -555,6 +556,16 @@ export class Lobby {
     // live socket) answers the requester alone, so hello spam cannot amplify into room-wide traffic.
     let changed = !seat.connected;
     seat.connected = true;
+    if (!sameController(seat.controller, session.controller)) {
+      seat.controller = { ...session.controller }; changed = true;
+      if (room.match && !room.spectatorOf(session.playerId)) {
+        const controller = { ...session.controller };
+        const match = room.match;
+        const update = () => { if (room.match === match) this.callMatch(room, 'setController', session.playerId, controller); };
+        if (this.queuedRoom(session)) this.queueEvent(room, update);
+        else update();
+      }
+    }
     if (!room.match && seat.name !== session.name) { seat.name = session.name; changed = true; }
     if (!room.hostId) { this.migrateHost(room); changed = true; }
     if (changed) this.broadcastState(room);
@@ -1361,7 +1372,7 @@ export class Lobby {
       // a setting checked for another content is filtered to this room's data (header "Gameplay plugins")
       const own = s.isBot ? null : this.seatSettings(room, s, data);
       return {
-        seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, connected: s.connected,
+        seat: s.seat, playerId: s.playerId, name: s.name, isBot: s.isBot, controller: normalizeController(s.controller, s.isBot), connected: s.connected,
         // DESIGN §16: the human's checked operator loadout and (0.2.2) per-operator 潜能 / 练度 (bots fight with the defaults)
         loadout: own ? own.loadout : null,
         ops: own ? own.ops : null,
@@ -1689,7 +1700,7 @@ export class Lobby {
   /** @returns {Seat} */
   humanSeat(idx, session) {
     return {
-      seat: idx, playerId: session.playerId, name: session.name, isBot: false, ready: false, connected: session.connected, left: false,
+      seat: idx, playerId: session.playerId, name: session.name, controller: normalizeController(session.controller), isBot: false, ready: false, connected: session.connected, left: false,
       loadout: session.loadout || null,
       ops: session.ops || null,
       notOwned: session.notOwned || null,

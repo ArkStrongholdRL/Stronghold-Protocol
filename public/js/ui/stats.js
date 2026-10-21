@@ -48,11 +48,12 @@
 // Pure logic, no Preact / DOM: Node-testable (test/ui/stats.test.js); localStorage is touched only by loadStats /
 // saveStats / their helpers.
 
+import { normalizeController } from '../../../shared/playerController.js';
 import { PHASE } from '../../../shared/constants.js';
 import { sanitizeName } from './playerName.js';
 
 /** Current record-envelope version (bump + add a MIGRATIONS step when the record shape changes). */
-export const STATS_VERSION = 2;
+export const STATS_VERSION = 3;
 /** localStorage key under the app's `sp.pref.` prefix (store.js loadPref). */
 export const STATS_PREF_KEY = 'stats';
 /** Oldest records are dropped beyond this many matches. */
@@ -160,6 +161,7 @@ export function recordId(res, myId) {
  */
 function normalizePlayerRow(raw, quit = false) {
   const p = isObj(raw) ? raw : {};
+  const controller = normalizeController(p.controller, bool(p.isBot));
   // the page and the replay read the title record from the game data by id: the sent texts are not kept
   const title = isObj(p.title) && str(p.title.id) ? { id: str(p.title.id) } : null;
   const lineup = (Array.isArray(p.lineup) ? p.lineup : []).filter(isObj).slice(0, MAX_LINEUP).map((u) => {
@@ -184,6 +186,8 @@ function normalizePlayerRow(raw, quit = false) {
     seat: int(p.seat, 0),
     name: str(p.name, MAX_NAME) || '',
     isBot: bool(p.isBot),
+    controller,
+    llmUsed: controller.kind !== 'bot' && (controller.kind === 'llm' || p.llmUsed === true),
     left: bool(p.left),
     alive: bool(p.alive, true),
     victory: bool(p.victory), // server semantics: team won AND this player was still in at the end
@@ -264,6 +268,8 @@ export function normalizeRecord(raw) {
  * @type {Record<number, (stats: any) => any>}
  */
 export const MIGRATIONS = {
+  // v3 adds declared controller metadata; normalizeRecord defaults old player rows to unknown.
+  2: (stats) => ({ v: 3, records: stats.records }),
   1: (stats) => ({ v: 2, records: (Array.isArray(stats.records) ? stats.records : []).map((r) => (isObj(r) ? { ...r, content: null } : r)) }),
 };
 
@@ -348,7 +354,7 @@ export function compactRecord(rec) {
   for (const k of COMPACT_FRAME) if (rec[k] != null) out[k] = rec[k];
   out.compact = true;
   out.players = self ? [{
-    playerId: self.playerId, seat: self.seat, alive: self.alive, victory: self.victory, roundsPassed: self.roundsPassed,
+    playerId: self.playerId, seat: self.seat, controller: self.controller, llmUsed: self.llmUsed, alive: self.alive, victory: self.victory, roundsPassed: self.roundsPassed,
     eliminatedRound: self.eliminatedRound, bandId: self.bandId, title: self.title, left: self.left, stats: self.stats,
     trophies: self.trophies,
     reward: self.reward,
@@ -573,7 +579,7 @@ export function buildQuitRecord(state, ctx = {}) {
     vs: vsOf(state.room?.content?.vs),
     content: contentOf(state.room?.content),
     players: [{
-      playerId: myId, seat: row.seat, name: row.name, isBot: false, left: true, alive, victory: false, roundsPassed,
+      playerId: myId, seat: row.seat, name: row.name, isBot: false, controller: row.controller, llmUsed: row.llmUsed, left: true, alive, victory: false, roundsPassed,
       eliminatedRound: alive ? null : live.aliveRound, lp: row.lp, bandId: row.bandId,
     }],
   });

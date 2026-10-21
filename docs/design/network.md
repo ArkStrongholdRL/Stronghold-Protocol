@@ -336,3 +336,16 @@ are entirely native and require consent [ASSUMED]; trusted classes cannot load i
 same-origin native script responses before import; all gameplay battle simulations run in Workers.
 
 Test-room admission requires `testAck:true` for both join and spectate; otherwise `TEST_CONFIRM` precedes any membership/state delivery. `g.test bond` accepts `{id,layers,count?}` (count is 0–99 extra members). All host attempts consume their per-command rate bucket, including malformed args. `[test-input ROOM]` init/call/timer JSON lines and `[test-audit ROOM]` results use the server logger. Test results have null titles and zero trophies/rewards and never enter browser records.
+
+## Client-declared player controller (maintainer request, 2026-10-21)
+
+`hello.controller` is optional `{ kind: 'human' | 'llm', client?: 'web' | 'dsh-plugin' | 'codex-mcp' }`.
+It is source metadata, never authentication, permission or `isBot`. The browser declares human/web;
+Ark Play plugins declare llm and their host. Missing declarations become unknown, including legacy
+clients reconnecting to an existing session. Only server-owned AI seats get controller kind bot.
+The normalized `{ kind, client }` is returned in welcome and room seats, and copied into match players.
+A successful hello updates an active player's controller through the platform `setController` method
+(including hosted matches); rejected session claims cannot alter it. `llmUsed` latches true once an
+active match seat has been declared llm. It survives switching back to human/unknown; it does not
+claim that every action was made by an LLM. This is the maintainer's explicit metadata extension,
+not an official gameplay rule.

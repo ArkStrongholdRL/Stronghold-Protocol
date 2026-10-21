@@ -40,6 +40,7 @@
 //   onDisconnect(session)                  the session's socket closed (session kept for the reconnect window)
 //   onExpire(session)                      the session was purged (disconnected longer than the window)
 
+import { normalizeController } from '../shared/playerController.js';
 import { randomBytes } from 'node:crypto';
 import { isIP } from 'node:net';
 import { C2S, validateC2S } from '../shared/protocol.js';
@@ -97,6 +98,7 @@ export class Session {
     this.token = token;
     /** @type {string} sanitized nickname */
     this.name = name;
+    this.controller = normalizeController(null);
     /** @type {import('ws').WebSocket | null} currently bound socket */
     this.ws = null;
     /** @type {boolean} */
@@ -694,13 +696,14 @@ export class Network {
       session.disconnectedAt = null;
     }
     session.name = name;
+    session.controller = normalizeController(msg.controller);
     session.lastSeen = now;
     session.addr = conn.ip;
     session.limitKey = conn.key;
 
     let extra = null;
     try { extra = this.handler.welcomeInfo?.() ?? null; } catch (e) { this.log.error('[net] welcomeInfo crashed', e); }
-    const welcome = { ...(extra && typeof extra === 'object' ? extra : null), t: 'welcome', playerId: session.playerId, token: session.token, name: session.name, serverNow: now, version: PROTOCOL_VERSION, resumed };
+    const welcome = { ...(extra && typeof extra === 'object' ? extra : null), t: 'welcome', playerId: session.playerId, token: session.token, name: session.name, serverNow: now, version: PROTOCOL_VERSION, resumed, controller: session.controller };
     if (validRid(rid)) welcome.rid = rid;
     this.reply(conn, welcome);
     try {

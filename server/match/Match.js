@@ -204,7 +204,7 @@
 //   common.js        what the modules share (FLOW_TICKER_PRIORITY, DELAYS, BAND_TURN_SECONDS — re-exported here, OK,
 //                    fail, BOSS_CLOCK_MS)
 
-import { PHASE, modeIdFor } from '../../shared/constants.js';
+import { APP_VERSION, PHASE, modeIdFor } from '../../shared/constants.js';
 import { isContentHash } from '../../shared/plugins/identity.js';
 import { Battle } from '../sim/Battle.js';
 import { DataSource } from '../sim/simdata.js';
@@ -216,6 +216,7 @@ import { PlayerState } from './PlayerState.js';
 import { EffectDispatcher, getDefaultRegistry } from './effectsMeta.js';
 import { setupMatchWaves } from './waves.js';
 import { GAME_SPEED, HEADLESS_SLICE_MS } from './fields.js';
+import { installTrajectory } from './trajectory.js';
 import { MatchPlatform } from './match/platform.js';
 import { MatchInfra } from './match/infra.js';
 import { MatchMessaging } from './match/messaging.js';
@@ -505,6 +506,7 @@ export class Match {
     this.hiddenReached = false;
     this.outcome = null;
     this._turnToken = 0;
+    installTrajectory(this, { appVersion: APP_VERSION });
     // [ASSUMED] A real scheduler keeps the 8 ms bot and headless slices, including a test match,
     // so one callback cannot run to HARD_CAP_SECONDS. Virtual time stays unbounded (the defaults
     // above). The input journal records the steps that callback took; replay stops there.

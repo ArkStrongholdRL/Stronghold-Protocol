@@ -105,7 +105,7 @@ export function ChessCard({ slot, idx, priv, frozen = false, reason = null, free
       aria-label=${`${t('{name}，价格 {price}', { name, price: slot.price })}${armed ? (disabled ? t('，无法购买') : t('，再次点击确认')) : ''}`} aria-pressed=${onTap ? String(!!armed) : undefined}>
     <span class="scard__bg" aria-hidden="true"></span>
     <span class="scard__water" aria-hidden="true">${bonds[0] ? html`<${BondGlyph} bondId=${bonds[0]} />` : null}</span>
-    <${Img} src=${chessPortraitUrl(m, c)} class="scard__art" />
+    <${Img} src=${chessPortraitUrl(m, c)} priority=${true} class="scard__art" />
     <span class="scard__top">
       <${TierChip} tier=${tier} size="md" />
       <${PriceHex} slot=${slot} free=${free} poor=${reason === t('资金不足')} />
@@ -173,7 +173,7 @@ export function ItemCard({ slot, idx, frozen = false, reason = null, free = fals
       <${TierChip} tier=${it?.tier ?? 1} size="md" />
       <${PriceHex} slot=${slot} free=${free} poor=${reason === t('资金不足')} />
     </span>
-    <span class="scard__itemart"><${Img} src=${itemIconUrl(m, it)} fallback=${html`<${GIcon} name="bolt" />`} /></span>
+    <span class="scard__itemart"><${Img} src=${itemIconUrl(m, it)} priority=${true} fallback=${html`<${GIcon} name="bolt" />`} /></span>
     <span class="scard__body">
       <span class="scard__name">${it?.name || slot.id}</span>
       <span class="scard__idesc"><${RichText} text=${it?.descRaw || it?.desc || ''} /></span>

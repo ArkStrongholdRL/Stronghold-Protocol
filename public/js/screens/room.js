@@ -16,6 +16,7 @@
 // CONTENT_NOT_READY), and a plugin mode the host chose shows beside the difficulty.
 // Texts go through t() (docs/I18N.md).
 
+import { PlayerControllerMark } from '../ui/playerController.js';
 import { useEffect, useRef, useState } from '../../vendor/hooks.module.js';
 import { DIFFICULTIES, DIFFICULTY_NAMES, DIFFICULTY_COLORS, MAX_SEATS, MAX_SPECTATORS } from '../../../shared/constants.js';
 import {
@@ -151,7 +152,7 @@ function SeatCard({ seat, index, room, facts, myId, busy, onAddBot, onRemoveBot,
       ${seat.isBot ? html`<span class="seat__bot-label"><${Icon} name="robot" />${t('AI 队友')}</span>` : null}
     </div>
     <div class="seat__who">
-      <span class="seat__name">${seat.name || t('博士')}</span>
+      <span class="seat__name">${seat.name || t('博士')}</span><${PlayerControllerMark} player=${seat} />
       ${isMe ? html`<span class="seat__you">${t('你')}</span>` : null}
     </div>
     <${MicroLabel}>${seat.isBot ? 'AUTONOMOUS UNIT' : `DOCTOR #${doctorNo(seat.playerId)}`}<//>

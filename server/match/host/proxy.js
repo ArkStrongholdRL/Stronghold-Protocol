@@ -122,6 +122,7 @@ export class MatchProxy {
   setLoadout(playerId, loadout, ops) { return this._request('setLoadout', [playerId, loadout, ops]); }
   requestSetupReroll(playerId, revision) { return this._request('requestSetupReroll', [playerId, revision]); }
   cancelSetupReroll(playerId, voteId) { return this._request('cancelSetupReroll', [playerId, voteId]); }
+  setController(playerId, controller) { this._notify('setController', [playerId, controller]); }
   onDisconnect(playerId) { this._notify('onDisconnect', [playerId]); }
   onReconnect(playerId) { this._notify('onReconnect', [playerId]); }
   onLeave(playerId) { this._notify('onLeave', [playerId]); }

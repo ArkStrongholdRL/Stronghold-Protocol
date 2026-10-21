@@ -671,3 +671,44 @@ keys override and missing/invalid entries retain built-in text. Scope remains br
 room content and simulation. Pure geometry SDK helpers return frozen values and accept at most 1024 range cells.
 Forge UI mounts without an equivalent slot require an explicit manual-adaptation report, separate from script copying.
 Art/audio templates ship original CC0 sample media; the studio fills the target's first editable slot [ASSUMED].
+
+
+### Local trajectory collection disclosure (fork, 2026-10-20)
+
+The opt-in server recorder now exposes its enabled status at `/trajectory-policy`.
+A session-scoped browser notice explains collected states, actions, player identifiers,
+research/training use, administrator-only retrieval, retention and deletion requests.
+A persistent disclosure entry remains available. Acknowledgement is UI state, not
+server authorization. Permanent departure seals that seat’s capture as interrupted;
+temporary disconnection preserves reconnect capture. See [TRAJECTORIES.md](../TRAJECTORIES.md).
+
+
+### Renderer startup recovery (2026-10-21 deployment fix)
+
+Entering the lobby warms the shared field-engine import and Pixi/Spine without
+creating a canvas. Room entry and restored sessions also warm it. Mounting imports
+the renderer in parallel with the asset store and shares the pending import.
+The existing 12-second deadlines remain. If the engine import completes after
+a timeout, fallback automatically retries in PREP (or waits until the next PREP);
+it never replaces the view mid-combat. Cleanup cancels stale callbacks, explicit
+fallback mode skips warming/recovery, and the existing two-retry bound remains.
+This changes loading only, not simulation, actions, rewards or trajectory contracts.
+
+
+### Optional production browser build (2026-10-21)
+
+`npm run build:client` combines browser modules with shared ESM chunks and
+merges screen styles, preserving worker/SDK source URLs. Hashed assets use the
+existing version-query immutable policy. Current shop/player images request
+eager/high priority loading; others retain lazy defaults. See
+[client build deployment record](../CLIENT-BUILD-20261021.md) for validation and rollback.
+
+### Player source markers (2026-10-21)
+
+Room seats, the in-match team list and settlement cards show an LLM source badge for a declared
+LLM controller. DSH / Codex host labels are shown when known; the tooltip identifies a client
+declaration. After a handoff, settlement still marks a seat with `llmUsed` and explains prior LLM
+control. Existing AI teammate markers and all gameplay behavior are unchanged. Local statistics
+envelope v3 preserves per-player controller/llmUsed through settlement, early quit, compaction and
+export/import; v2 and earlier player rows without declarations normalize to unknown, not human.
+There is no model-name reporting or LLM statistics filter in this iteration.

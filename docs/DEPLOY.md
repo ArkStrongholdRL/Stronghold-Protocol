@@ -320,6 +320,39 @@ volumes:
 
   `sudo systemctl daemon-reload && sudo systemctl enable --now stronghold`；日志 `journalctl -u stronghold -f`；防火墙 `sudo ufw allow 3000/tcp`。
 
+
+### 可选：采集真人操作轨迹（源码部署）
+
+这份 fork 的源码支持服务端本地 JSONL 采集，默认关闭。进入游戏目录后：
+
+```bash
+npm ci
+SP_TRAJECTORY_DIR=.cache/trajectories npm start
+```
+
+正常在网页游玩即可；文件保存在服务器，不在玩家浏览器。每位非 AI 玩家一份，含操作前后局面、购买／移动／站位、接受或拒绝结果和结算。
+测试房间不采集；没有自动上传或下载接口。参与者应知晓该服务器正在收集对局。
+
+使用 systemd 时，在上面的 `[Service]` 中增加：
+
+```ini
+Environment=SP_TRAJECTORY_DIR=/var/lib/stronghold/trajectories
+StateDirectory=stronghold
+```
+
+systemd 会按服务用户创建 `/var/lib/stronghold`；采集目录需可写。改完后重载服务配置并重启。
+容器部署则传入同名环境变量，并把它指向的目录挂载为可写持久卷；文件不应只保存在容器临时层。
+
+结束一局后，在源码目录运行：
+
+```bash
+node tools/trajectory.mjs verify .cache/trajectories --require-complete
+```
+
+若配置了绝对目录，用那个目录替换 `.cache/trajectories`。正在进行、异常中断或达到文件上限的对局不会被算成完整轨迹。
+采集完后从服务器复制所需 `.jsonl` 文件即可；重启时移除 `SP_TRAJECTORY_DIR` 可关闭新对局采集。
+字段、版本、校验和保留范围见 [轨迹采集说明](TRAJECTORIES.md)。
+
 ## 5. 排错
 
 | 现象 | 处理 |
@@ -509,3 +542,13 @@ Node 22 的 `--permission` **不限制网络**（TCP/UDP/DNS/监听均可能可�
 扩大可读范围：不要在安装根中放此类链接，包括外链 node_modules、npm link 和配置/存储链接。建议使用容器或
 网络命名空间限制出站与内网访问，并设置 OS 内存/CPU 限额。父进程已对日志、启动错误、发送帧、RPC 回复等 IPC
 做形态和长度复核（DESIGN §32.11），但 Node 在复核前已解码 IPC，不能据此声称免疫内存炸弹或消息洪泛。
+
+
+## Optional production client build
+
+Install development dependencies and run `npm run build:client`. Publish assets
+from `.cache/client-build/assets/` into `public/build/assets/` before atomically
+replacing the deployed `public/index.html` with `.cache/client-build/index.html`.
+Keep source `public/index.html` unchanged in the source checkout. Preserve old
+hashed assets for active pages. For the current Huawei deployment and rollback,
+see [the build record](CLIENT-BUILD-20261021.md).

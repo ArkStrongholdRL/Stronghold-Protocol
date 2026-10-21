@@ -39,6 +39,11 @@ server/match/
 
 ---
 
+Optional ordinary-game capture is implemented in `server/match/trajectory.js` and
+documented in [TRAJECTORIES.md](TRAJECTORIES.md). It records native public/own
+views, actual client-intent transitions and results to operator-enabled local
+JSONL. It does not change simulation or enable test-room collection.
+
 ## 1. Match flow
 
 ```
@@ -1075,3 +1080,11 @@ blocking `battleCheck` window. Failed grants leave the seat unpicked; auto/bot f
 and skips when none grants [ASSUMED]. Native `g.offer`/`g.offerRefresh` use plugin id, local window id, sequence and slot; `m.public.offers` is a
 reconnectable, spectator-readable snapshot. Bots resolve immediately. Sources, bounds and [ASSUMED] defaults are
 [PLUGINS §10b](PLUGINS.md#10b-offers--interaction-windows); test journals carry declarations and intents.
+
+### Player controller metadata (2026-10-21)
+
+The session and lobby carry the optional hello controller declaration; match PlayerState copies it
+and tracks `llmUsed`. `setController(playerId, declaration)` is a metadata-only platform method,
+also forwarded by the match-host proxy and captured by test journals. Public player rows and
+results include controller and llmUsed. It does not change isBot, timers, awards, autoplay or combat.
+The wire and persistence contract is in design/network.md and design/client.md.

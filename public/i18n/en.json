@@ -2188,5 +2188,19 @@
   "删除这台浏览器里、当前服务器版本已经用不到的导入素材；仍在使用的会保留。": "Delete the imported assets in this browser that this server's current version no longer uses; the ones still in use stay.",
   "已清理 {n} 个旧版本文件。": "Cleared {n} old-version files.",
   "没有需要清理的旧版本文件。": "No old-version files to clear.",
-  "读不到服务器的素材清单，没有删除任何文件。": "Could not read the server's asset lists; nothing was deleted."
+  "读不到服务器的素材清单，没有删除任何文件。": "Could not read the server's asset lists; nothing was deleted.",
+  "对局数据采集提示": "Game data collection notice",
+  "无法读取采集状态，请刷新页面后重试。": "Cannot read the recording status. Refresh this page and try again.",
+  "采集与隐私": "Recording & privacy",
+  "离开本站": "Leave this site",
+  "已知悉，继续": "Understood, continue",
+  "本站正在采集对局轨迹，用于策略分析与智能体训练。": "This server records game trajectories for strategy analysis and agent training.",
+  "记录局面、商店与资金、购买及升本等操作、站位、结算，以及代号和局内玩家标识。": "Records include game states, shop offers and funds, purchases and upgrades, positions, results, callsigns and in-game player identifiers.",
+  "轨迹可能含队友的公开代号与阵容；请勿在代号中填写真实姓名或联系方式。": "Trajectories may include teammates’ public callsigns and lineups. Do not use real names or contact details as your callsign.",
+  "轨迹不保存登录令牌、IP 地址或浏览器指纹；服务器运行日志与浏览器本地记录另行处理。": "Trajectories do not store login tokens, IP addresses or browser fingerprints. Server logs and local browser records are handled separately.",
+  "文件仅供服务器管理员通过受控方式取回，当前没有公开下载入口，也没有自动删除期限。": "Only server administrators can retrieve the files through controlled access. There is no public download endpoint or automatic deletion period.",
+  "不愿参与请勿开始对局。主动离开对局会停止此席位的新增轨迹；断线重连期间可能保留托管状态。": "Do not start a match if you do not wish to participate. Permanently leaving a match stops new trajectory records for your seat; disconnections may include autoplay state.",
+  "删除请求请联系服务器管理员，并提供代号和大致对局时间；不要提供登录令牌。": "For deletion requests, contact the server administrator with your callsign and approximate match time. Do not provide login tokens.",
+  "LLM 控制（客户端声明）": "LLM-controlled (client-declared)",
+  "本局曾由 LLM 控制": "LLM controlled this seat during the match"
 }

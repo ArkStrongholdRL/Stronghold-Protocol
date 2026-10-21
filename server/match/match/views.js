@@ -106,6 +106,8 @@ export class MatchViews {
         seat: ps.seat,
         name: ps.name,
         isBot: ps.isBot,
+        controller: { ...ps.controller },
+        llmUsed: ps.llmUsed,
         connected: ps.isBot || (ps.connected && !ps.left),
         alive: ps.alive,
         lp: Math.max(0, ps.lp),
