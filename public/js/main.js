@@ -63,6 +63,7 @@ import { t, N_, translateWire } from '../../shared/i18n.js';
 import { recordError, installTrafficMeter } from './diag.js';
 import { installContent, installContentSet } from './content.js';
 import { cosmetics } from './cosmetics.js';
+import { warmFieldEngine } from './ui/fieldEngine.js';
 
 const RESTORE_GRACE_MS = 1500;
 const JOIN_DELAY_MS = 350;
@@ -285,7 +286,10 @@ function wireNet() {
 
   // Entering (title → lobby) while already online also needs the deep-link join.
   store.subscribe((s, prev) => {
-    if (s.session.entered && !prev.session.entered) schedulePendingJoin();
+    if (s.session.entered && !prev.session.entered) {
+      schedulePendingJoin();
+      void warmFieldEngine().catch(() => {});
+    }
     // in a room (co-op or solo, also a resumed one) a match is near: its data starts downloading
     if (s.room && !prev.room) warmGameData();
     // the match on screen is over (left, closed, kicked, a new session): a rehearsal task of it is dead, and the frame
@@ -302,6 +306,7 @@ function wireNet() {
  * data store shares each file's promise).
  */
 function warmGameData() {
+  void warmFieldEngine().catch(() => {});
   // a room with gameplay plugins: content.js downloads its content set's files instead (DESIGN §32.6)
   const go = () => { if (store.get().room?.content?.vanilla === false) return; data.loadAll(GAME_FILES).catch(() => {}); };
   if (typeof globalThis.requestIdleCallback === 'function') globalThis.requestIdleCallback(go, { timeout: 2500 });
@@ -432,6 +437,7 @@ async function boot() {
   await Promise.all([waitForFonts(1200), connectWhenReady, langReady]);
   const root = document.getElementById('app');
   render(html`<${App} />`, root);
+  if (entered) void warmFieldEngine().catch(() => {});
 
   const splash = document.getElementById('boot');
   if (splash) {

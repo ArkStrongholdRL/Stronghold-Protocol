@@ -509,3 +509,13 @@ Node 22 的 `--permission` **不限制网络**（TCP/UDP/DNS/监听均可能可�
 扩大可读范围：不要在安装根中放此类链接，包括外链 node_modules、npm link 和配置/存储链接。建议使用容器或
 网络命名空间限制出站与内网访问，并设置 OS 内存/CPU 限额。父进程已对日志、启动错误、发送帧、RPC 回复等 IPC
 做形态和长度复核（DESIGN §32.11），但 Node 在复核前已解码 IPC，不能据此声称免疫内存炸弹或消息洪泛。
+
+
+## Optional production client build
+
+Install development dependencies and run `npm run build:client`. Publish assets
+from `.cache/client-build/assets/` into `public/build/assets/` before atomically
+replacing the deployed `public/index.html` with `.cache/client-build/index.html`.
+Keep source `public/index.html` unchanged in the source checkout. Preserve old
+hashed assets for active pages. For the current Huawei deployment and rollback,
+see [the build record](CLIENT-BUILD-20261021.md).

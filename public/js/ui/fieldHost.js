@@ -14,6 +14,8 @@ import { data } from '../data.js';
 import { audio } from '../audio.js';
 import { store } from '../store.js';
 import { settingsStore } from './settings.js';
+import { loadFieldEngine } from './fieldEngine.js';
+import { PHASE } from '../../../shared/constants.js';
 
 const LOAD_TIMEOUT_MS = 12000;
 const METHODS = ['setStage', 'setCamera', 'setPrep', 'enterBattle', 'pushSnapshot', 'pushEvents', 'highlightTiles', 'on', 'resize', 'destroy'];
@@ -217,10 +219,10 @@ export function seedAssets(store) {
 /**
  * Create a field view in `host`: the render engine when available, else the DOM fallback.
  * @param {HTMLElement} host
- * @param {{ signal?: AbortSignal }} [options] Cancels a pending mount without creating a fallback.
+ * @param {{ signal?: AbortSignal, onEngineReadyLate?: () => void }} [options] Cancels a pending mount without creating a fallback.
  * @returns {Promise<ReturnType<typeof guardView>>}
  */
-export async function mountFieldView(host, { signal } = {}) {
+export async function mountFieldView(host, { signal, onEngineReadyLate } = {}) {
   checkActive(signal);
   const pref = renderPref();
   const opts = { data, assets: data.get('assets'), audio, settings: settingsStore.get(), padding: hudPadding, hud: hudBands };
@@ -230,6 +232,10 @@ export async function mountFieldView(host, { signal } = {}) {
     signal?.addEventListener('abort', onAbort, { once: true });
     if (signal?.aborted) onAbort();
     let engineView = null;
+    let engineImported = false;
+    const enginePending = loadFieldEngine();
+    // Import in parallel with the asset store; observe rejection before awaiting it.
+    enginePending.catch(() => {});
     const dispose = (view) => { try { view?.destroy?.(); } catch { /* ignore */ } };
     try {
       checkActive(controller.signal);
@@ -243,8 +249,9 @@ export async function mountFieldView(host, { signal } = {}) {
         opts.assets = am.assets;
         seedAssets(am.assets);
       }
-      const mod = await withTimeout(import('../render/app.js'), LOAD_TIMEOUT_MS, 'render engine import', controller.signal);
+      const mod = await withTimeout(enginePending, LOAD_TIMEOUT_MS, 'render engine import', controller.signal);
       checkActive(controller.signal);
+      engineImported = true;
       if (typeof mod?.createFieldView !== 'function') throw new Error('createFieldView missing');
       // A factory that ignores cancellation still belongs to this attempt when it eventually returns.
       const pending = Promise.resolve(mod.createFieldView(host, { ...opts, signal: controller.signal })).then((view) => {
@@ -260,6 +267,9 @@ export async function mountFieldView(host, { signal } = {}) {
       controller.abort();
       dispose(engineView);
       checkActive(signal);
+      if (!engineImported && onEngineReadyLate) {
+        void enginePending.then(() => { if (!signal?.aborted) onEngineReadyLate(); }, () => {});
+      }
       console.warn('[field] render engine unavailable, using the simplified view:', err?.message || err);
     } finally {
       signal?.removeEventListener('abort', onAbort);
@@ -279,12 +289,15 @@ export function useFieldView(hostRef) {
   const retries = useRef(0);
   const viewRef = useRef(null);
   useEffect(() => {
-    let dead = false, retrying = false;
+    let dead = false, retrying = false, lateEngineReady = false;
     const host = hostRef.current;
     if (!host) return undefined;
     setState({ view: null, kind: 'loading' });
     const controller = new AbortController();
-      mountFieldView(host, { signal: controller.signal }).then((view) => {
+      mountFieldView(host, { signal: controller.signal, onEngineReadyLate: () => {
+        lateEngineReady = true;
+        retryLateEngine();
+      } }).then((view) => {
         if (dead) { view.destroy(); return; }
         viewRef.current = view;
         if (view.kind === 'engine') retries.current = 0;
@@ -295,12 +308,14 @@ export function useFieldView(hostRef) {
         view.setSkins?.(store.get().match?.public?.players);
         globalThis.__SP_VIEW__ = view; // dev / E2E introspection (view.raw.stats?.())
         setState({ view, kind: view.kind });
+        retryLateEngine();
       }, (err) => { if (!dead && !controller.signal.aborted) console.error('[field] mount failed', err); });
     const unsub = settingsStore.subscribe((s) => viewRef.current?.setSettings?.(s));
     // room.skins is accepted in every phase: update the current field without restarting its battle runner.
     const unsubSkins = store.subscribe((s, prev) => {
       if (s.me?.playerId !== prev.me?.playerId) viewRef.current?.setMe?.(s.me?.playerId || null);
       if (s.match?.public?.players !== prev.match?.public?.players) viewRef.current?.setSkins?.(s.match?.public?.players);
+      if (s.match?.public?.phase !== prev.match?.public?.phase) retryLateEngine();
     });
     const onResize = () => viewRef.current?.resize();
     // A temporary network/vendor failure must not pin this mounted match to fallback forever. Retry on a useful
@@ -310,6 +325,11 @@ export function useFieldView(hostRef) {
         || document.visibilityState !== 'visible' || globalThis.navigator?.onLine === false || retries.current >= 2) return;
       retrying = true; retries.current++; setAttempt((n) => n + 1);
     };
+    // A late import can finish while fallback is still mounting. Check both completions.
+    // Only replace a live view in prep, never restart the local combat runner mid-battle.
+    function retryLateEngine() {
+      if (lateEngineReady && store.get().match?.public?.phase === PHASE.PREP) onRetry();
+    }
     window.addEventListener('resize', onResize);
     window.addEventListener('online', onRetry);
     document.addEventListener('visibilitychange', onRetry);

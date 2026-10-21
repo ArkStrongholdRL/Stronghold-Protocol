@@ -671,3 +671,24 @@ keys override and missing/invalid entries retain built-in text. Scope remains br
 room content and simulation. Pure geometry SDK helpers return frozen values and accept at most 1024 range cells.
 Forge UI mounts without an equivalent slot require an explicit manual-adaptation report, separate from script copying.
 Art/audio templates ship original CC0 sample media; the studio fills the target's first editable slot [ASSUMED].
+
+
+### Renderer startup recovery (2026-10-21 deployment fix)
+
+Entering the lobby warms the shared field-engine import and Pixi/Spine without
+creating a canvas. Room entry and restored sessions also warm it. Mounting imports
+the renderer in parallel with the asset store and shares the pending import.
+The existing 12-second deadlines remain. If the engine import completes after
+a timeout, fallback automatically retries in PREP (or waits until the next PREP);
+it never replaces the view mid-combat. Cleanup cancels stale callbacks, explicit
+fallback mode skips warming/recovery, and the existing two-retry bound remains.
+This changes loading only, not simulation, actions, rewards or trajectory contracts.
+
+
+### Optional production browser build (2026-10-21)
+
+`npm run build:client` combines browser modules with shared ESM chunks and
+merges screen styles, preserving worker/SDK source URLs. Hashed assets use the
+existing version-query immutable policy. Current shop/player images request
+eager/high priority loading; others retain lazy defaults. See
+[client build deployment record](../CLIENT-BUILD-20261021.md) for validation and rollback.

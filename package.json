@@ -40,7 +40,8 @@
     "check:imports": "node tools/check-imports.mjs",
     "ci": "node tools/ci.mjs",
     "package": "node tools/package.mjs",
-    "package:lite": "node tools/package.mjs --lite"
+    "package:lite": "node tools/package.mjs --lite",
+    "build:client": "node tools/build-client.mjs"
   },
   "engines": {
     "node": ">=22"
@@ -60,6 +61,7 @@
     "eslint": "^10.12.0",
     "globals": "^17.13.0",
     "puppeteer-core": "^25.12.0",
-    "typescript": "^5.9.2"
+    "typescript": "^5.9.2",
+    "esbuild": "0.25.12"
   }
 }
