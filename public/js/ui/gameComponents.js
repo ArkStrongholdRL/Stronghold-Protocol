@@ -3,6 +3,7 @@
 
 import { useState, useMemo, useEffect } from '../../vendor/hooks.module.js';
 import { html, Icon, TierChip, Tooltip } from './components.js';
+import { playerControllerAvatar } from './playerController.js';
 import { artTransport } from '../resourceNetwork.js';
 import { data, useData, localAsset } from '../data.js';
 import { parseRichText, rtClassName } from './richText.js';
@@ -267,11 +268,11 @@ export function RichTip({ text, children, placement = 'top' }) {
 }
 
 /**
- * Seat-coloured player avatar: band icon when a band is picked, else glyph/robot.
+ * Seat-coloured player avatar: declared LLM portrait, otherwise band icon or glyph/robot.
  * @param {{ player: any, size?: 'sm'|'md', self?: boolean, class?: string }} props
  */
 export function PlayerAvatar({ player, size = 'md', self = false, class: cls }) {
-  const src = player?.bandId ? bandIconUrl(data.get('assets'), player.bandId) : null;
+  const src = playerControllerAvatar(player) || (player?.bandId ? bandIconUrl(data.get('assets'), player.bandId) : null);
   const glyph = [...(player?.name || '').trim()][0] || '?';
   const dead = player?.alive === false || player?.status === 'dead';
   const left = player?.status === 'left';
