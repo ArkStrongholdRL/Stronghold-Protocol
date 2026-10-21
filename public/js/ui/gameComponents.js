@@ -1,8 +1,9 @@
 // Shared in-match building blocks (Preact + htm): data hook, images with fallbacks, rich text,
 // unit thumbnails, LP tower, coin badge, official UI sprites. Styles: css/screens/game*.css.
 
-import { useState, useMemo } from '../../vendor/hooks.module.js';
+import { useState, useMemo, useEffect } from '../../vendor/hooks.module.js';
 import { html, Icon, TierChip, Tooltip } from './components.js';
+import { artTransport } from '../resourceNetwork.js';
 import { data, useData, localAsset } from '../data.js';
 import { parseRichText, rtClassName } from './richText.js';
 import { t as tr } from '../../../shared/i18n.js';
@@ -64,8 +65,21 @@ export function makeLookups(ready = true) {
  */
 export function Img({ src, class: cls, alt = '', fallback = null, style, priority = false }) {
   const [bad, setBad] = useState(null);
+  const [loaded, setLoaded] = useState(null);
+  const scheduled = !!(priority && typeof src === 'string' && /^\/assets\//.test(src));
+  useEffect(() => {
+    if (!scheduled) return;
+    let disposed = false, temporary = null;
+    artTransport.blob(src, { priority: 3 }).then(blob => {
+      if (disposed) return;
+      temporary = URL.createObjectURL(blob);
+      setLoaded({ src, url: temporary });
+    }, () => { if (!disposed) setBad(src); });
+    return () => { disposed = true; if (temporary) URL.revokeObjectURL(temporary); };
+  }, [src, scheduled]);
   if (!src || bad === src) return fallback;
-  return html`<img class=${cls} src=${src} alt=${alt} draggable=${false} loading=${priority ? 'eager' : 'lazy'} fetchpriority=${priority ? 'high' : 'auto'} decoding="async" style=${style} onError=${() => setBad(src)} />`;
+  if (scheduled && loaded?.src !== src) return fallback;
+  return html`<img class=${cls} src=${scheduled ? loaded.url : src} alt=${alt} draggable=${false} loading=${priority ? 'eager' : 'lazy'} fetchpriority=${priority ? 'high' : 'auto'} decoding="async" style=${style} onError=${() => setBad(src)} />`;
 }
 
 /** Official UI sprite by 'group/key' with a fallback. */

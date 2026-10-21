@@ -792,3 +792,16 @@ each selected bank separately; `attacks`/`hits` and `attackMix`/`hitMix` use mat
 manifest instead of importing an older PR's full JSON, preserving JP voices and current operators. See DESIGN §34.3.
 
 The 40th local token model is the original champagne bomb (`token_10031_swire2_gdtrap`, §29.5), extracted from the official `btl_pfb_tokens_0.ab` through `TOKEN_SPINES`. Its web fallback is retained. Failed board-pack/image requests can retry after connectivity/visibility recovers; a failed three.js module gets at most two fresh-URL retries per page because browser module failures are cached. Successful resources remain cached.
+
+
+## On-demand art loading (optional client build, 2026-10-21)
+
+The default asset-store image and Pixi Spine loaders share `public/js/resourceNetwork.js`:
+four downloads at once (two on reported 2G/3G), shared in-flight URLs, transient retries
+and bounded idle/attempt deadlines. Current priority UI portraits use the same queue.
+Texture parsing, refcounts and eviction remain with Pixi/the existing asset store.
+The classic `/sw.js` serves imported files first and may save successful immutable
+art/font responses in a separate 96 MiB / 512-file FIFO cache; it excludes audio,
+Range, code, API/game data and non-hashed paths. Import storage counting/clearing also
+covers this runtime cache. The runtime cache is optional and failures fall back to
+the network. See [the build guide](CLIENT-BUILD-20261021.md) for limits and provenance.

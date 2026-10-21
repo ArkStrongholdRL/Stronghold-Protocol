@@ -692,3 +692,16 @@ merges screen styles, preserving worker/SDK source URLs. Hashed assets use the
 existing version-query immutable policy. Current shop/player images request
 eager/high priority loading; others retain lazy defaults. See
 [client build deployment record](../CLIENT-BUILD-20261021.md) for validation and rollback.
+
+
+### Client loading follow-up (2026-10-21)
+
+The optional production build collapses the built-in simulation into one lazy
+asset shared over HTTP with the vanilla rehearsal Worker. Plugin/script/trait
+source verification and the sandbox Worker CSP remain unchanged. Art-store images,
+priority shop images and Spine files share a bounded, deduplicated download queue.
+The existing asset service worker also stores on-demand content-hashed art in a
+separate bounded runtime cache (96 MiB / 512 files), preserving imported packs.
+Gameplay, deterministic simulation source, BattleSpec and content identities do not
+change. Implementation, provenance and manual validation limits are documented in
+[the client build guide](../CLIENT-BUILD-20261021.md).

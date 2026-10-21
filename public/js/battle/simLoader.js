@@ -22,9 +22,10 @@ function deepFreeze(root) {
 let loadedScripts = false, loadedTraits = false, traitInstaller = null;
 export async function loadBrowserSim({ base = '/sim/', dataBase = '/data/', fetchFn = (...a) => globalThis.fetch(...a), data = null, cs = null, bounds = null,
   scripts = [], hashInput = null, nativeVerified = false, deferScripts = false, traitRuntimeVerified = null } = {}) {
-  const [spec, simdata, support] = await Promise.all([
-    import(`${base}spec.js`), import(`${base}simdata.js`), import(`${base}content/support/index.js`),
-  ]);
+  // Overlap the lazy engine download with data requests. Failure falls back to source ESM.
+  const nativeLoad = base === '/sim/' && !scripts.length && !loadedScripts && !loadedTraits
+    && !Object.values(data?.garrisons ?? {}).some(g => g.operatorTrait)
+    ? import('./nativeSim.js').then(m => m.loadNativeSim()).catch(() => null) : null;
   const fetchOnce = async (n) => {
     try {
       const res = await fetchFn(`${dataBase}${n}.json`, { cache: 'no-cache' });
@@ -40,9 +41,18 @@ export async function loadBrowserSim({ base = '/sim/', dataBase = '/data/', fetc
   if (missing.length) throw new Error(`simulation data unavailable: ${missing.join(', ')}`);
   const raw = {};
   SIM_DATA_FILES.forEach((n, i) => { raw[n] = deepFreeze(files[i]); });
+  // Source graph remains authoritative for hash-pinned trait runtimes and script plugins.
+  const bundled = base === '/sim/' && !scripts.length && !loadedScripts && !loadedTraits
+    && !Object.values(raw.garrisons ?? {}).some(g => g.operatorTrait)
+    ? await nativeLoad : null;
+  const [spec, simdata, support] = bundled ? [bundled.spec, bundled.simdata, bundled.support]
+    : await Promise.all([import(`${base}spec.js`), import(`${base}simdata.js`), import(`${base}content/support/index.js`)]);
   simdata.setSimData(raw);
   if (typeof support.setGameData === 'function') support.setGameData(null); // re-read through the injected data
-  await installSimBounds(base, raw, data ? bounds : undefined);
+  if (bundled) {
+    if (data) bundled.bounds.installOfficialBounds(bounds && bounds.v === 1 ? bounds : null);
+    else bundled.bounds.rememberOfficialBounds(raw);
+  } else await installSimBounds(base, raw, data ? bounds : undefined);
   if (!deferScripts && scripts.length) {
     const sdkUrl = /^file:/i.test(base) ? new URL('../../shared/plugins/sdk.js',base).href : new URL('/shared/plugins/sdk.js',globalThis.location.href).href;
     const {loadScripts} = await import(new URL('scriptLoad.js',sdkUrl).href);

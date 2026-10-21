@@ -3,7 +3,7 @@
 //
 // Opening the dialog reads nothing from the server: no art, not the manifests (assetPack.js reads the three served
 // manifests only once an import starts) and not the download queue. The dialog: a folder (showDirectoryPicker, else an
-// <input webkitdirectory>) or a zip (a picker, or dropped), cancel, the counts, 清除已导入的素材 after a confirm, the
+// <input webkitdirectory>) or a zip (a picker, or dropped), cancel, the counts, 清除缓存素材 after a confirm, the
 // persist note, and why import is unavailable on plain http or in a browser without the APIs. Closing it cancels a
 // running import; what was stored stays, and the download queue skips it (assetDownload.js).
 import { useEffect, useRef, useState } from '../../vendor/hooks.module.js';
@@ -176,8 +176,8 @@ export function AssetImportButton() {
   };
   const clearImported = async () => {
     const ok = await confirmDialog({
-      title: t('清除已导入的素材'),
-      text: t('只删除这台浏览器里导入的素材，不会影响服务器。'),
+      title: t('清除缓存素材'),
+      text: t('删除这个浏览器中的导入素材和自动缓存；需要时会重新下载，不会影响服务器。'),
       okText: t('确认清除'),
       danger: true,
     });
@@ -200,7 +200,7 @@ export function AssetImportButton() {
           <${Button} size="sm" data-testid="asset-import-folder" disabled=${importBusy} onClick=${() => void chooseFolder()}>${t('选择文件夹')}<//>
           <${Button} size="sm" data-testid="asset-import-zip" disabled=${importBusy} onClick=${() => zipRef.current?.click()}>${t('选择 zip')}<//>
           ${importBusy ? html`<${Button} size="sm" data-testid="asset-import-cancel" onClick=${() => assetImport.cancel()}>${t('取消导入')}<//>` : null}
-          ${(storeInfo?.count > 0) ? html`<${Button} size="sm" disabled=${importBusy} data-testid="asset-import-clear" onClick=${() => void clearImported()}>${t('清除已导入的素材')}<//>` : null}
+          ${(storeInfo?.count > 0) ? html`<${Button} size="sm" disabled=${importBusy} data-testid="asset-import-clear" onClick=${() => void clearImported()}>${t('清除缓存素材')}<//>` : null}
         </div>
         <input class="asset-import__file" type="file" webkitdirectory=${true} multiple=${true} ref=${folderRef} tabindex="-1" aria-hidden="true"
           data-testid="asset-import-folder-input" onChange=${onFolderInput} />

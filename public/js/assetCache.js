@@ -5,12 +5,14 @@
 // cannot import this module. A unit test fails if the two copies disagree.
 //
 // The worker serves only same-origin GET of a content-hashed /assets/, /fonts/ or /media/ URL. A hit comes from
-// this cache. A miss goes to the network and is not written here. HTML, scripts, /data/, /sim/ and /ws are never
+// this cache. A miss goes to the network; the worker may save immutable art in a separate bounded runtime cache. HTML, scripts, /data/, /sim/ and /ws are never
 // matched. A Range request is left to the network so audio seeking still reaches the server. What an import stored is
 // also listed in one index entry of the cache (IMPORTED_INDEX_URL): Chrome cannot list a cache that large.
 
 /** Cache Storage name. Bump the suffix to drop previously imported bytes on the next activation. */
 export const IMPORTED_ASSET_CACHE = 'sp-imported-assets-v1';
+/** Opportunistically downloaded art; separate from user-imported packs. */
+export const RUNTIME_ASSET_CACHE = 'sp-runtime-assets-v1';
 
 /** Prefix of every version of this cache. Activation deletes other names that start with it. */
 export const IMPORTED_ASSET_CACHE_PREFIX = 'sp-imported-assets-';
@@ -154,13 +156,16 @@ export async function addImportedPaths(cache, paths) {
   }));
 }
 
-/** How many imported files are stored, counting /assets/ and /fonts/ only (not the /media/ alias). */
+/** Stored imported files plus bounded runtime art; /media/ aliases are not counted twice. */
 export async function countImportedFiles(cachesApi = globalThis.caches) {
   const paths = await listImportedPaths(cachesApi);
   let n = 0;
   for (const path of paths) {
     if (path.startsWith('/assets/') || path.startsWith('/fonts/')) n++;
   }
+  try {
+    if (cachesApi?.open) n += (await (await cachesApi.open(RUNTIME_ASSET_CACHE)).keys()).filter(req => !paths.has(new URL(req.url).pathname)).length;
+  } catch { /* runtime storage is optional */ }
   return n;
 }
 
@@ -193,19 +198,30 @@ export async function pruneImportedPaths(wanted, cachesApi = globalThis.caches) 
   return { removed, removedFiles, kept: kept.length };
 }
 
-/** Delete every version of the import cache. The worker stays registered. */
+/** Delete imported packs and on-demand art. The worker stays registered. */
 export async function clearImportedAssets(cachesApi = globalThis.caches) {
   if (!cachesApi?.delete) return false;
   try {
+    const worker = globalThis.navigator?.serviceWorker?.controller;
+    if (worker && typeof MessageChannel !== 'undefined') {
+      await new Promise(resolve => {
+        const channel = new MessageChannel();
+        const done = () => { clearTimeout(timer); channel.port1.close(); channel.port2.close(); resolve(); };
+        const timer = setTimeout(done, 2000);
+        channel.port1.onmessage = done;
+        worker.postMessage({ type: 'clear-runtime-assets' }, [channel.port2]);
+      });
+    }
     if (cachesApi.keys) {
       const names = await cachesApi.keys();
-      const ours = names.filter((name) => String(name).startsWith(IMPORTED_ASSET_CACHE_PREFIX));
+      const ours = names.filter((name) => String(name).startsWith(IMPORTED_ASSET_CACHE_PREFIX) || name === RUNTIME_ASSET_CACHE);
       if (ours.length) {
         await Promise.all(ours.map((name) => cachesApi.delete(name)));
         return true;
       }
     }
-    return await cachesApi.delete(IMPORTED_ASSET_CACHE);
+    const results = await Promise.all([cachesApi.delete(IMPORTED_ASSET_CACHE), cachesApi.delete(RUNTIME_ASSET_CACHE)]);
+    return results.some(Boolean);
   } catch {
     return false;
   }

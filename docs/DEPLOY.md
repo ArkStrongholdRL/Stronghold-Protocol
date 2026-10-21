@@ -519,3 +519,10 @@ replacing the deployed `public/index.html` with `.cache/client-build/index.html`
 Keep source `public/index.html` unchanged in the source checkout. Preserve old
 hashed assets for active pages. For the current Huawei deployment and rollback,
 see [the build record](CLIENT-BUILD-20261021.md).
+
+
+The client-loading follow-up also changes `public/sw.js`. Publish it alongside the
+built client with `Cache-Control: no-cache` (exclude it from edge caching). Preserve
+matching source modules for plugin/source fallbacks. Ordinary content-hashed art is
+cached on demand up to 96 MiB / 512 files, separately from imported resource packs;
+no CDN or Cloudflare Worker is required. See the client build guide above.
