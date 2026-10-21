@@ -50,6 +50,8 @@
 // so it can be unit tested without a browser. Helpers never throw on unknown ids — they return null and the
 // caller falls back (docs/ASSETS.md "Other fallbacks").
 
+import { ART_REQUEST_MS, installArtParsers, loadRuntimeImage } from './resourceNetwork.js';
+
 import { cosmetics, createCosmeticLayers, EMPTY_MANIFEST } from './cosmetics.js';
 
 const isObj = (v) => v !== null && typeof v === 'object' && !Array.isArray(v);
@@ -639,6 +641,7 @@ export function localAssetUrl(m, group, name) {
 
 /** Default browser image loader. */
 export function loadImageElement(url) {
+  if (typeof Image !== 'undefined' && typeof fetch === 'function' && typeof URL.createObjectURL === 'function') return loadRuntimeImage(url);
   return new Promise((resolve, reject) => {
     if (typeof Image === 'undefined') { reject(new Error('no Image in this environment')); return; }
     const img = new Image();
@@ -650,15 +653,25 @@ export function loadImageElement(url) {
   });
 }
 
-/** Default Spine loader: PIXI.Assets.load(skel) → spineData (needs globalThis.PIXI + PIXI.spine). */
+const pendingSpines = new Map();
+/** Shared healthy model loads survive view remounts without duplicating their requests. */
 export async function loadSpineData(entry, opts) {
   const PIXI = globalThis.PIXI;
   if (!PIXI || !PIXI.Assets || !PIXI.spine) throw new Error('PIXI / pixi-spine not loaded');
-  if (opts && opts.fresh) forgetPendingSpine(entry, opts.keep);
-  const res = await PIXI.Assets.load(entry.skel);
-  const data = res && (res.spineData || res);
-  if (!data || !Array.isArray(data.animations)) throw new Error(`bad spine data: ${entry.skel}`);
-  return data;
+  if (pendingSpines.has(entry.skel)) return pendingSpines.get(entry.skel);
+  const pending = load().finally(() => {
+    if (pendingSpines.get(entry.skel) === pending) pendingSpines.delete(entry.skel);
+  });
+  pendingSpines.set(entry.skel, pending);
+  return pending;
+  async function load() {
+    installArtParsers(PIXI);
+    if (opts && opts.fresh) forgetPendingSpine(entry, opts.keep);
+    const res = await PIXI.Assets.load(entry.skel);
+    const data = res && (res.spineData || res);
+    if (!data || !Array.isArray(data.animations)) throw new Error(`bad spine data: ${entry.skel}`);
+    return data;
+  }
 }
 
 /**
@@ -919,7 +932,7 @@ export function createAssets(options) {
       return (opts.unloadSpine || unloadSpineData)(e, value, keep);
     },
     max: opts.spineMax ?? 60,
-    timeout: opts.spineTimeout ?? 20000,
+    timeout: opts.spineTimeout ?? ART_REQUEST_MS,
     concurrency: opts.spineConcurrency ?? 6,
     // memory budget (a parsed skeleton holds ~0.1–12 MB): idle skeletons beyond SPINE_IDLE_BYTES go, and all of
     // them once no scene has referenced or held any for SPINE_QUIET_DELAY_MS (lobby / room / result; a field view in

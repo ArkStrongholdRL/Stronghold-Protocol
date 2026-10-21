@@ -17,11 +17,12 @@
 // answered as an error and the server runs the candidates itself. The page drops a task the server no longer waits for
 // by terminating this worker (battle/rehearsal.js), so a stale simulation never holds it.
 
-// The simulation modules are loaded the way the page loads them (`/sim/` is served from server/sim/, so it is no
-// public/ path a static import could resolve — public/js/battle/runner.js imports them dynamically too).
-const { createBattleFromSpec } = await import('/sim/spec.js');
-const { DataSource, setSimData } = await import('/sim/simdata.js');
-const { RehearsalRun } = await import('/sim/rehearsal.js');
+// Reuse the production engine asset across the page and this separate Worker realm.
+import { loadNativeSim } from './nativeSim.js';
+const { spec, simdata, rehearsal } = await loadNativeSim();
+const { createBattleFromSpec } = spec;
+const { DataSource, setSimData } = simdata;
+const { RehearsalRun } = rehearsal;
 
 /** The page's simulation data as a DataSource (null before the data frame arrives). */
 let ds = null;

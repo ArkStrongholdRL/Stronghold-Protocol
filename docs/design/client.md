@@ -712,3 +712,15 @@ control. Existing AI teammate markers and all gameplay behavior are unchanged. L
 envelope v3 preserves per-player controller/llmUsed through settlement, early quit, compaction and
 export/import; v2 and earlier player rows without declarations normalize to unknown, not human.
 There is no model-name reporting or LLM statistics filter in this iteration.
+
+### Client loading follow-up (2026-10-21)
+
+The optional production build collapses the built-in simulation into one lazy
+asset shared over HTTP with the vanilla rehearsal Worker. Plugin/script/trait
+source verification and the sandbox Worker CSP remain unchanged. Art-store images,
+priority shop images and Spine files share a bounded, deduplicated download queue.
+The existing asset service worker also stores on-demand content-hashed art in a
+separate bounded runtime cache (96 MiB / 512 files), preserving imported packs.
+Gameplay, deterministic simulation source, BattleSpec and content identities do not
+change. Implementation, provenance and manual validation limits are documented in
+[the client build guide](../CLIENT-BUILD-20261021.md).

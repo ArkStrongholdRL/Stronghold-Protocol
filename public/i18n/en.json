@@ -2189,6 +2189,8 @@
   "已清理 {n} 个旧版本文件。": "Cleared {n} old-version files.",
   "没有需要清理的旧版本文件。": "No old-version files to clear.",
   "读不到服务器的素材清单，没有删除任何文件。": "Could not read the server's asset lists; nothing was deleted.",
+  "清除缓存素材": "Clear cached assets",
+  "删除这个浏览器中的导入素材和自动缓存；需要时会重新下载，不会影响服务器。": "Delete imported assets and automatic caches in this browser. Assets can be downloaded again when needed; the server is not changed.",
   "对局数据采集提示": "Game data collection notice",
   "无法读取采集状态，请刷新页面后重试。": "Cannot read the recording status. Refresh this page and try again.",
   "采集与隐私": "Recording & privacy",
