@@ -1,6 +1,7 @@
 # Huawei 0.3.3 更新准备（2026-10-30）
 
-本次授权范围：同步上游并准备更新；统计／录像和多角色只出方案。没有切换线上服务，没有设置自动切换任务。
+最初范围为同步上游并准备更新，统计／录像和多角色只出方案；随后用户明确要求直接更新 Huawei。
+已于 2026-10-30 15:39 启用最终候选；没有设置自动切换任务。此前准备阶段的检查记录保留如下。
 
 ## 源码与客户端
 
@@ -120,3 +121,20 @@ DSH `dsh-ark-stronghold-0.1.4.zip`，SHA-256 `9f6257b8317cd30689b8fb0546244b583c
 最终 Core `6eae6865467e5df4b363ac6ee84f2314ecda4a17` 的 CI 也通过：
 https://github.com/ArkStrongholdRL/ark-play-core/actions/runs/41020292270 。
 本报告最终提交仅更新说明，不改变已验证／已打包的运行源码 `47cdf5f4`；文档提交跳过重复全矩阵 CI。
+
+
+## 2026-10-30 15:39 已正式启用
+
+用户在得知在线对局仍存在后，明确要求“直接更新”。启用脚本增加显式操作员开关
+`--activate --interrupt-active`，仅此分支允许跳过空闲等待并记录当时的连接／对局数。
+候选源码／素材逐文件校验、环境备份、原子 current 切换和失败回滚保持不变。
+本次实际执行成功，`activation-033-status.json` 为 `activated`。
+
+- 旧 KTUQ 对局按预期随服务重启结束，日志为 `disposed (shutdown)`。
+- 当前 `/opt/stronghold/current` 指向 `/opt/stronghold/releases/0.3.3-47cdf5f4`。
+- 公开 `https://ark.minyako.top/healthz` 返回 app 0.3.3、build `e548edffaffc`、预期内容身份。
+- 公网首页引用 `main-Q3ADZNQ5.js`，仍含原备案信息；公告插件已加载。
+- 新 Core 经公网证书验证 WSS 完成握手、12 张公开表摘要校验和 Worker 加载；检查未建房或开局。
+- 原环境备份保留于 `/opt/stronghold/activation-033-environment.backup`，仅 root 可读；原目录可用于回滚。
+- Codex `37011f5`、DSH `357ee5a` 已各推送 `codex/upstream-0.3.3` 发布准备分支，待 Node 22/24 CI。
+  此阶段没有创建插件 tag／GitHub Release、没有 npm 发布，也没有改写已安装插件缓存。
