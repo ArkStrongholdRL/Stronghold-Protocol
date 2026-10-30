@@ -33,6 +33,11 @@ async function verify(file) {
         const entry = pending.pop();
         if (entry && typeof entry === 'object') {
           for (const [key, value] of Object.entries(entry)) {
+            // One explicit offline reproduction field; older v1 headers may omit it.
+            if (entry === row && seq === 0 && row.kind === 'header' && key === 'seed') {
+              if (!Number.isInteger(value) || value < 1 || value > 0xffffffff) throw new Error('Invalid header seed: expected normalized uint32');
+              continue;
+            }
             if (/seed|rng|hiddenBossId/i.test(key)) throw new Error('Forbidden hidden-state field');
             if (value && typeof value === 'object') pending.push(value);
           }
@@ -74,7 +79,7 @@ async function verify(file) {
   if (parsedBytes !== info.size) throw new Error('Noncanonical line endings or file changed while reading');
   if (!header || !footer) throw new Error('Missing header/footer: interrupted or damaged capture');
   return { file, valid: true, schema: header.schema, appVersion: header.appVersion,
-    codeRevision: header.codeRevision, dataSha256: header.content?.dataSha256,
+    codeRevision: header.codeRevision, seed: header.seed ?? null, dataSha256: header.content?.dataSha256,
     captureId: header.captureId, seat: header.seat, complete: footer.complete, status: footer.status,
     rows: seq, bytes: info.size, counts, source: header.source };
 }

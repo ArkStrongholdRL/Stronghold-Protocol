@@ -365,3 +365,14 @@ layout search inside the five-hook contract; `ioleta-adaptive` composes Russell-
 variants and contact repairs extend the list up to eight. Extension stops after a clean completed zero-leak result,
 or at a strict six-times-per-candidate total tick cap. Server and host Worker share RehearsalRun, limits and counters.
 Default legacy rules remain the baseline. See [BOT_STRATEGIES](../BOT_STRATEGIES.md).
+
+### Fork: offline trajectory reproduction seed (2026-10-30)
+
+When server-side ordinary-game trajectory capture is enabled, each seat file's
+first `header` row includes `seed`, the normalized uint32 master seed used by
+Match. It is written once, not repeated in state/action/outcome rows, and is
+not added to public/private views or model observations. The v1 verifier allows
+only this top-level header exception; legacy files without it remain valid.
+Recording consumes no gameplay RNG and changes no match rules. A seed plus
+matching code/data is still insufficient without settings, seats and complete
+action/control history; see [TRAJECTORIES.md](../TRAJECTORIES.md).

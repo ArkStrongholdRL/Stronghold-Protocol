@@ -31,6 +31,7 @@ The operator copies selected files from that directory and manages retention.
 
 The header names APP_VERSION, room mode/difficulty, content IDs when present,
 the initial controller declaration and LLM involvement flag,
+and the normalized uint32 master `seed` actually used by Match, once in the header,
 and SHA256 of `JSON.stringify(match.data)` (cached once per data object). You may
 set `SP_TRAJECTORY_REVISION` to the source revision label for the deployment;
 otherwise `codeRevision` is null. That label is operator supplied, not verified
@@ -43,7 +44,7 @@ Schema: `stronghold-human-seat-trajectory/v1`, with monotonic `seq` from zero.
 
 | Row | Contents |
 | --- | --- |
-| `header` | Capture/seat/source identity, version/content/data provenance and size limit |
+| `header` | Capture/seat/source identity, version/content/data provenance, master seed and size limit |
 | `state` | Authoritative publicView, that seat's privateView, public deployment geometry and connection/autoplay/left flags, at start, phase changes, private updates, disconnect/reconnect/leave and disposal |
 | `action` | Client `g.*` or in-match room loadout/setup-reroll/cancel intent, exact before/after views, actual native return and accepted boolean |
 | `outcome-message` | Emitted `b.end` or `m.result` data; no engine-internal battle or RNG dump |
@@ -52,7 +53,8 @@ Schema: `stronghold-human-seat-trajectory/v1`, with monotonic `seq` from zero.
 The private view includes shop offers/effective prices, funds, level, hand/temp,
 board coordinates/facing/equipment, loadout/ownership settings and public enemy
 preview. Other seats' private views, shared stock/RNG internals, handshake tokens
-and browser authentication are not captured. Keys naming seed/RNG or the native
+and browser authentication are not captured. Except for the single top-level
+`header.seed`, keys naming seed/RNG or the native
 transport's unrevealed hiddenBossId are removed recursively. Public result messages can include
 other players' names and final lineups. Storage is one file per seat, not an
 anonymized dataset. No frame-by-frame combat recording is provided.
@@ -65,8 +67,7 @@ transport, not proof of human authorship. `header.controller` records the initia
 and `state.control.controller` plus `state.control.llmUsed` retain current source and prior
 LLM involvement. Source changes produce a state row with reason `setController`. Declarations
 are self-reported, not proof of a human or specific model identity. Missing legacy declarations
-are unknown. The v1 JSONL envelope remains compatible; no hidden-state or identity credentials
-are added. Track actual collection provenance separately. Setup ownership
+are unknown. The v1 JSONL envelope remains compatible; identity credentials are not added. Track actual collection provenance separately. Setup ownership
 and DIY are fixed from the initial views; pre-match lobby edits are not action rows.
 
 Snapshots contain native views plus a read-only `deployment: { field, cells }`
@@ -83,6 +84,16 @@ place their human actions into an on-policy PPO buffer.
 node tools/trajectory.mjs verify .cache/trajectories
 node tools/trajectory.mjs verify .cache/trajectories --require-complete
 ```
+
+`header.seed` is server-side offline metadata; it is not added to player views,
+WebSocket messages, model observations or per-round rows. Older v1 files without
+it remain valid and the verifier reports `seed: null`; it must not invent a seed
+for them. A seed is necessary but not sufficient for whole-match reproduction:
+retain the exact code, data, mode/settings, seat ordering and action/control
+history. Shop/draft/meta streams and normal/unite/boss field seeds derive from
+the master seed; different decisions or timing/control transitions may diverge.
+These seat trajectories do not contain every player's private intents or every
+autoplay action, so the addition does not turn them into full-match replay files.
 
 The verifier checks schema, sequence, JSONL termination, footer checksum/status
 and basic action/state shape, and reports accepted/rejected moves and actual +1

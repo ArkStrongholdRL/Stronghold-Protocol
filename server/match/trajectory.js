@@ -8,6 +8,7 @@ const MAX_BYTES = 64 * 1024 * 1024;
 const FOOTER_RESERVE = 4096;
 // The native public transport currently includes an unrevealed hiddenBossId.
 // Keep it and seed/RNG fields out of demonstration views and captured messages.
+// The offline-only header separately records the normalized master seed once for reproduction.
 const copy = value => JSON.parse(JSON.stringify(value,
   (key, entry) => /seed|rng|hiddenBossId/i.test(key) ? undefined : entry));
 const dataHashes = new WeakMap();
@@ -93,7 +94,7 @@ export function installTrajectory(match, { directory = process.env.SP_TRAJECTORY
       const writer = { fd: openSync(path.join(path.resolve(directory), filename), 'wx', 0o600),
         seq: 0, bytes: 0, hash: createHash('sha256'), fromStart: match.phase === 'LOBBY', resultSeen: false };
       writers.set(ps.playerId, writer);
-      emit(writer, { kind: 'header', schema: SCHEMA, captureId, seat: ps.seat, playerId: ps.playerId, appVersion,
+      emit(writer, { kind: 'header', schema: SCHEMA, captureId, seat: ps.seat, playerId: ps.playerId, appVersion, seed: match.seed,
         source: 'human-seat-client-intents', controller: ps.controller, llmUsed: ps.llmUsed, content: { cs: match.cs ?? null, vs: match.vs ?? null,
           dataSha256: dataHashes.get(match.data), dataHashEncoding: 'JSON.stringify(match.data)' },
         codeRevision: process.env.SP_TRAJECTORY_REVISION || null,

@@ -43,7 +43,8 @@ server/match/
 Optional ordinary-game capture is implemented in `server/match/trajectory.js` and
 documented in [TRAJECTORIES.md](TRAJECTORIES.md). It records native public/own
 views, actual client-intent transitions and results to operator-enabled local
-JSONL. It does not change simulation or enable test-room collection.
+JSONL. The offline header records the normalized master seed once for reproduction;
+state/action views still omit seed/RNG fields. It does not change simulation or enable test-room collection.
 
 ## 1. Match flow
 
