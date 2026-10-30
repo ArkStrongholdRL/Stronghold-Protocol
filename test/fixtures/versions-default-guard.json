@@ -19,6 +19,7 @@
         "playerId": "<player>",
         "name": "<name>",
         "isBot": false,
+        "controller": { "kind": "unknown", "client": null },
         "ready": false,
         "connected": true
       },

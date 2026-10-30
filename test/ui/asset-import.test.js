@@ -515,12 +515,15 @@ test('the worker answers only hashed asset GET, and its copy matches the module'
   assert.ok(sw.includes(`const IMPORTED_ASSET_CACHE = '${IMPORTED_ASSET_CACHE}';`));
   assert.ok(sw.includes(`const IMPORTED_ASSET_CACHE_PREFIX = '${IMPORTED_ASSET_CACHE_PREFIX}';`));
   assert.ok(sw.includes(`const IMPORTED_ASSET_PATH = ${IMPORTED_ASSET_PATH};`));
-  assert.equal(sw.includes('.put('), false);
+  // Imported packs remain read-only; this fork also maintains a separate bounded runtime cache.
+  assert.equal(sw.includes('imported.put('), false);
 
   const origin = 'http://127.0.0.1:9';
   const deleted = [];
   const fetched = [];
   const stored = new Map([[`${origin}/assets/~0123456789abcdef/hit.png`, 'cached-bytes']]);
+  const runtimeStored = new Map(), writes = [];
+  const background = (p) => writes.push(p);
   let skipWaiting = 0;
   let claimed = 0;
   const listeners = {};
@@ -532,16 +535,22 @@ test('the worker answers only hashed asset GET, and its copy matches the module'
       clients: { claim() { claimed++; return Promise.resolve(); } },
     },
     caches: {
-      async open() {
+      async open(name) {
+        const entries = name === IMPORTED_ASSET_CACHE ? stored : runtimeStored;
         return {
           async match(request, options) {
             // exact keys only (the worker never asks for ignoreSearch: Chrome scans every entry for it)
             assert.equal(options, undefined);
             const key = typeof request === 'string' ? request : request.url;
-            const hit = stored.get(key);
-            return hit ? new Response(hit) : undefined;
+            const hit = entries.get(key);
+            return hit instanceof Response ? hit.clone() : hit ? new Response(hit) : undefined;
           },
-          async put() { throw new Error('network responses must not be cached'); },
+          async put(key, response) {
+            assert.notEqual(name, IMPORTED_ASSET_CACHE, 'network responses never modify imported packs');
+            runtimeStored.set(key, response.clone());
+          },
+          async keys() { return [...entries.keys()].map((url) => ({ url })); },
+          async delete(key) { return entries.delete(typeof key === 'string' ? key : key.url); },
         };
       },
       async keys() { return ['sp-imported-assets-v0', IMPORTED_ASSET_CACHE, 'other-cache']; },
@@ -553,6 +562,7 @@ test('the worker answers only hashed asset GET, and its copy matches the module'
     },
     URL: globalThis.URL,
     Response: globalThis.Response,
+    Headers: globalThis.Headers,
     Promise: globalThis.Promise,
   };
   vm.runInNewContext(sw, sandbox, { filename: 'public/sw.js' });
@@ -587,11 +597,14 @@ test('the worker answers only hashed asset GET, and its copy matches the module'
   for (const [method, url] of cases) {
     const request = new Request(url, { method });
     let responded = null;
-    listeners.fetch({ request, respondWith(p) { responded = p; } });
+    listeners.fetch({ request, respondWith(p) { responded = p; }, waitUntil: background });
     assert.equal(responded != null, shouldServeImportedAsset(request, origin), url);
     if (responded) pending.push(responded);
   }
   await Promise.all(pending);
+  await Promise.all(writes);
+  assert.equal(runtimeStored.size, 2, 'only immutable art/fonts are cached; audio is not');
+  assert.equal(stored.size, 1, 'the imported pack stays unchanged');
   const ranged = new Request(`${origin}/assets/~0123456789abcdef/a.png`, { headers: { Range: 'bytes=0-1' } });
   let rangedResponse = null;
   listeners.fetch({ request: ranged, respondWith(p) { rangedResponse = p; } });
@@ -613,10 +626,11 @@ test('the worker answers only hashed asset GET, and its copy matches the module'
 
   const miss = new Request(`${origin}/assets/~0123456789abcdef/miss.png`);
   let missPromise = null;
-  listeners.fetch({ request: miss, respondWith(p) { missPromise = p; } });
+  listeners.fetch({ request: miss, respondWith(p) { missPromise = p; }, waitUntil: background });
   assert.equal(await (await missPromise).text(), 'from-network');
   assert.equal(fetched.length, fetchedBeforeHit + 1);
   assert.equal(fetched.at(-1), miss.url);
+  await Promise.all(writes);
 });
 
 test('site CSP keeps worker-src self and blob, and the sim worker policy does not gain the asset worker', () => {

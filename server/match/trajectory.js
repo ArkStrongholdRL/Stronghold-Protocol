@@ -24,6 +24,7 @@ export function installTrajectory(match, { directory = process.env.SP_TRAJECTORY
   function rawWrite(writer, event) {
     const bytes = Buffer.from(JSON.stringify({ ...event, seq: writer.seq }) + '\n');
     let offset = 0;
+    // loop-cap: every successful write advances offset by >= 1, bounded by bytes.length; zero progress throws.
     while (offset < bytes.length) {
       const n = writeSync(writer.fd, bytes, offset, bytes.length - offset);
       if (n <= 0) throw new Error('short trajectory write');
