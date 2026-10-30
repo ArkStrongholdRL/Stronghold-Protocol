@@ -95,7 +95,7 @@ export function installTrajectory(match, { directory = process.env.SP_TRAJECTORY
         seq: 0, bytes: 0, hash: createHash('sha256'), fromStart: match.phase === 'LOBBY', resultSeen: false };
       writers.set(ps.playerId, writer);
       emit(writer, { kind: 'header', schema: SCHEMA, captureId, seat: ps.seat, playerId: ps.playerId, appVersion, seed: match.seed,
-        source: 'human-seat-client-intents', controller: ps.controller, llmUsed: ps.llmUsed, content: { cs: match.cs ?? null, vs: match.vs ?? null,
+        source: 'human-seat-client-intents', controller: ps.controller, llmUsed: ps.llmUsed, diy: ps.diy ?? {}, content: { cs: match.cs ?? null, vs: match.vs ?? null,
           dataSha256: dataHashes.get(match.data), dataHashEncoding: 'JSON.stringify(match.data)' },
         codeRevision: process.env.SP_TRAJECTORY_REVISION || null,
         startedAt: new Date().toISOString(), roomMode: match.mode, difficulty: match.difficulty,

@@ -31,6 +31,7 @@ The operator copies selected files from that directory and manages retention.
 
 The header names APP_VERSION, room mode/difficulty, content IDs when present,
 the initial controller declaration and LLM involvement flag,
+the seat's fixed `diy` mapping `{ [slotBaseId]: { charId, skillIndex, uniEquipId } }`,
 and the normalized uint32 master `seed` actually used by Match, once in the header,
 and SHA256 of `JSON.stringify(match.data)` (cached once per data object). You may
 set `SP_TRAJECTORY_REVISION` to the source revision label for the deployment;
@@ -44,7 +45,7 @@ Schema: `stronghold-human-seat-trajectory/v1`, with monotonic `seq` from zero.
 
 | Row | Contents |
 | --- | --- |
-| `header` | Capture/seat/source identity, version/content/data provenance, master seed and size limit |
+| `header` | Capture/seat/source identity, version/content/data provenance, master seed, DIY operator resource IDs/skill/module picks and size limit |
 | `state` | Authoritative publicView, that seat's privateView, public deployment geometry and connection/autoplay/left flags, at start, phase changes, private updates, disconnect/reconnect/leave and disposal |
 | `action` | Client `g.*` or in-match room loadout/setup-reroll/cancel intent, exact before/after views, actual native return and accepted boolean |
 | `outcome-message` | Emitted `b.end` or `m.result` data; no engine-internal battle or RNG dump |
@@ -77,6 +78,12 @@ post-history/prep64 candidate labels. Downstream conversion must explicitly map
 versions, IDs, map cells and actions, retain unsupported records with reasons,
 and split complete games before learning. These are offline trajectories; do not
 place their human actions into an on-policy PPO buffer.
+
+`header.diy` identifies the actual operator resource ID (`charId`) selected for
+each DIY slot, together with its skill index and module resource ID (`uniEquipId`,
+null for none). It is `{}` when no DIY operator is selected. Piece `uid` is only
+a match-instance identity; use its `id` plus this slot mapping and the matching
+data resources to resolve the operator. Older headers may omit `diy`.
 
 ## Integrity and limits
 

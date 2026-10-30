@@ -376,3 +376,7 @@ only this top-level header exception; legacy files without it remain valid.
 Recording consumes no gameplay RNG and changes no match rules. A seed plus
 matching code/data is still insufficient without settings, seats and complete
 action/control history; see [TRAJECTORIES.md](../TRAJECTORIES.md).
+
+The same offline header also includes the seat's fixed `diy` mapping from slot
+base ID to `{ charId, skillIndex, uniEquipId }`, identifying the actual operator
+and choices without copying resource definitions. No selection is `{}`.
