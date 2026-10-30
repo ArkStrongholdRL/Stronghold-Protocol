@@ -136,5 +136,15 @@ https://github.com/ArkStrongholdRL/ark-play-core/actions/runs/41020292270 。
 - 公网首页引用 `main-Q3ADZNQ5.js`，仍含原备案信息；公告插件已加载。
 - 新 Core 经公网证书验证 WSS 完成握手、12 张公开表摘要校验和 Worker 加载；检查未建房或开局。
 - 原环境备份保留于 `/opt/stronghold/activation-033-environment.backup`，仅 root 可读；原目录可用于回滚。
-- Codex `37011f5`、DSH `357ee5a` 已各推送 `codex/upstream-0.3.3` 发布准备分支，待 Node 22/24 CI。
+- Codex `37011f5`、DSH `357ee5a` 已各推送 `codex/upstream-0.3.3` 发布准备分支，Node 22/24 CI 已全部通过。
   此阶段没有创建插件 tag／GitHub Release、没有 npm 发布，也没有改写已安装插件缓存。
+
+
+插件发布就绪检查：Codex CI https://github.com/HarcoChen/ArkStrongholdCodex/actions/runs/41021578311 ，
+DSH CI https://github.com/HarcoChen/dsh-ArkStronghold/actions/runs/41021579564 ，均 success。
+最终发布准备包改存各宿主 `results/upstream-0.3.3-release-ready-20261030/`，包含最新发布说明和对应源码：
+Codex ZIP SHA-256 `9bf243470c4ff79704e1ee447645a5e89ea896a0037db28b6c657cc953500987`；
+DSH ZIP SHA-256 `0e65285936ac00f4cec52783e915261262ab6f2e7264238db6493f78eecb2ddf`。
+DSH npm 包 `results/npm/dsh-ark-stronghold-0.1.4.tgz` 已解包核对入口／内容，
+SHA-256 `ca19c1e202be44002aa601b10a2c0b88cc2cd6ed9da64d25cfebf9405f251ae9`。
+这份记录更新没有重新构建或改动已上线代码。
