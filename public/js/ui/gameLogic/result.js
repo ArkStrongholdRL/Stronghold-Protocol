@@ -30,6 +30,7 @@ export function normalizeResult(res, pub) {
       isBot: !!(p.isBot ?? pp.isBot),
       controller: normalizeController(p.controller ?? pp.controller, !!(p.isBot ?? pp.isBot)),
       llmUsed: p.llmUsed === true || pp.llmUsed === true || (p.controller ?? pp.controller)?.kind === 'llm',
+      ...(Number.isInteger(p.aiTakeoverRound ?? pp.aiTakeoverRound) ? { aiTakeoverRound: p.aiTakeoverRound ?? pp.aiTakeoverRound } : {}),
       alive,
       lp: teamLp != null ? (alive === false ? 0 : Math.max(0, teamLp)) : ownLp,
       lpShared: teamLp != null,
